@@ -1,0 +1,16 @@
+features_path:
+  - /features/
+
+resources:
+    - name: httpclient
+      type: httpclient
+      options:
+        base_url: http://tomato-demo:9000
+    - name: db
+      type: postgres
+      options:
+        datasource: postgres://tomato:potato@postgres:5432/tomato?sslmode=disable
+    - name: user-service
+      type: wiremock
+      options:
+        base_url: http://user-service:8080

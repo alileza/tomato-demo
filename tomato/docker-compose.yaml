@@ -1,0 +1,43 @@
+version: '3.4'
+services:
+  tomato:
+    image: quay.io/tomatool/tomato:v1.4.2
+    volumes:
+        - ./features:/features
+        - ./tomato.yaml:/config.yml
+    depends_on:
+      - postgres
+      - tomato-demo
+      - user-service
+
+  tomato-demo:
+      build: ..
+      expose:
+          - "9000"
+      env_file:
+          - .env
+      # this is a little hack to ensure that service runs after dependencies
+      # more details: https://docs.docker.com/compose/startup-order/
+      entrypoint: >
+        sh -c 'sh /scripts/waitfor.sh postgres:5432 user-service:8080 && /bin/tomato-demo'
+      volumes:
+        - ../scripts/waitfor.sh:/scripts/waitfor.sh
+      depends_on:
+        - postgres
+        - user-service
+      restart: always
+          
+  postgres:
+      image: postgres:9.6
+      expose:
+          - "5432"
+      environment:
+          POSTGRES_USER: tomato
+          POSTGRES_PASSWORD: potato
+      volumes:
+        - ../migrations:/docker-entrypoint-initdb.d/
+
+  user-service:
+      image: rodolpheche/wiremock:2.31.0-alpine
+      expose:
+          - "8080"
