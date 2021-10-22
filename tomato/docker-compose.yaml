@@ -21,7 +21,7 @@ services:
       entrypoint: >
         sh -c 'sh /scripts/waitfor.sh postgres:5432 user-service:8080 && /bin/tomato-demo'
       volumes:
-        - ../waitfor.sh:/scripts/waitfor.sh
+        - ../scripts/waitfor.sh:/scripts/waitfor.sh
       depends_on:
         - postgres
         - user-service
