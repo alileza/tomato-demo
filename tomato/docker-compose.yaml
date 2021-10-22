@@ -9,6 +9,7 @@ services:
       - postgres
       - tomato-demo
       - user-service
+      - rabbitmq
 
   tomato-demo:
       build: ..
@@ -19,7 +20,7 @@ services:
       # this is a little hack to ensure that service runs after dependencies
       # more details: https://docs.docker.com/compose/startup-order/
       entrypoint: >
-        sh -c 'sh /scripts/waitfor.sh postgres:5432 user-service:8080 && /bin/tomato-demo'
+        sh -c 'sh /scripts/waitfor.sh postgres:5432 user-service:8080 rabbitmq:5672 && /bin/tomato-demo'
       volumes:
         - ../scripts/waitfor.sh:/scripts/waitfor.sh
       depends_on:
@@ -41,3 +42,8 @@ services:
       image: rodolpheche/wiremock:2.31.0-alpine
       expose:
           - "8080"
+  
+  rabbitmq:
+    image: rabbitmq:3.6.1-management
+    expose:
+        - "5672"
