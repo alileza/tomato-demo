@@ -1,6 +1,6 @@
 Feature: http feature example
 
-    Scenario: Set and compare http-wiremock responses
+    Scenario: Pay endpoint should insert data to db correctly
         Given set "user-service" with path "/example" response code to 200 and response body
             """
                 {"user_id":"Dutchessbramble"}
@@ -13,7 +13,7 @@ Feature: http feature example
             }
             """
         And "httpclient" response code should be 200
-        And "httpclient" response body should equal
+        And "httpclient" response body should contain
             """
                  {
                     "data": {
@@ -25,3 +25,20 @@ Feature: http feature example
         Then "db" table "payments" should look like
         | id | transaction_id | authorized_by   |
         | 1  | abc123         | Dutchessbramble |
+
+    Scenario:  Pay endpoint should failed to insert data when user service is down
+        Given set "user-service" with path "/example" response code to 500 and response body
+            """
+                {"error":"bad gateway"}
+            """
+        Then "httpclient" send request to "POST /pay" with body
+            """
+            {
+                "amount":100, 
+                "transaction_id":"abc123"
+            }
+            """
+        And "httpclient" response code should be 500
+        Then "db" table "payments" should look like
+        | id | transaction_id | authorized_by   |
+        
