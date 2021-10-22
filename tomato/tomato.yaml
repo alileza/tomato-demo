@@ -14,3 +14,8 @@ resources:
       type: wiremock
       options:
         base_url: http://user-service:8080
+    - name: rabbitmq
+      type: rabbitmq
+      options:
+        datasource: amqp://guest:guest@rabbitmq:5672
+        wait_duration: 200ms

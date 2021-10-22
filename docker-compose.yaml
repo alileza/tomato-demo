@@ -6,6 +6,9 @@ services:
           - "9000:9000"
       env_file:
           - .env
+      depends_on:
+          - "postgres"
+          - "rabbitmq"
           
   postgres:
       image: postgres:9.6
@@ -16,3 +19,9 @@ services:
           POSTGRES_PASSWORD: potato
       volumes:
         - ./migrations:/docker-entrypoint-initdb.d/
+
+  rabbitmq:
+    image: rabbitmq:3.6.1-management
+    ports:
+        - "15672:15672"
+        - "5672:5672"

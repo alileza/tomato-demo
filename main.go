@@ -9,10 +9,12 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
+	"github.com/streadway/amqp"
 )
 
 var (
 	dbconn      = os.Getenv("DBCONN")
+	queuedsn    = os.Getenv("QUEUEDSN")
 	userService = os.Getenv("USER_SERVICE_BASE_URL")
 )
 
@@ -23,6 +25,11 @@ func main() {
 		log.Fatal(err)
 	}
 	defer db.Close()
+
+	queueConn, err := amqp.Dial(queuedsn)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	// create a new router
 	mux := http.NewServeMux()
@@ -75,14 +82,38 @@ func main() {
 			return
 		}
 
-		// for example publish a message to queue here
-
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		// marshall response body
+		responseBody, err := json.Marshal(map[string]interface{}{
 			"status": "success",
 			"data": map[string]interface{}{
 				"payment_id": paymentID,
 			},
 		})
+		if err != nil {
+			http.Error(w, "Internal server error:"+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		// publishing message to queue
+		ch, err := queueConn.Channel()
+		if err != nil {
+			http.Error(w, "Internal server error: failed to create queue channel "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if err := ch.ExchangeDeclare("payments", "topic", true, false, false, false, nil); err != nil {
+			http.Error(w, "Internal server error:"+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		if err := ch.Publish("payments", "created", true, false, amqp.Publishing{
+			Body: responseBody,
+		}); err != nil {
+			http.Error(w, "Internal server error:"+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		// write http response
+		w.Write(responseBody)
 	})
 
 	httpServer := &http.Server{
