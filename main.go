@@ -6,28 +6,16 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/golang-migrate/migrate/v4"
-	_ "github.com/golang-migrate/migrate/v4/database/postgres"
-	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq"
 )
 
 var (
-	dbconn        = os.Getenv("DBCONN")
-	migrationPath = os.Getenv("MIGRATION_PATH")
-	userService   = os.Getenv("USER_SERVICE_BASE_URL")
+	dbconn      = os.Getenv("DBCONN")
+	userService = os.Getenv("USER_SERVICE_BASE_URL")
 )
 
 func main() {
-	// Run db migration
-	m, err := migrate.New(migrationPath, dbconn)
-	if err != nil {
-		log.Fatalf("Failed to initiate migration: %v", err)
-	}
-	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
-		log.Fatal(err)
-	}
-
 	// connect to database
 	db, err := sqlx.Open("postgres", dbconn)
 	if err != nil {
