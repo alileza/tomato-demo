@@ -16,6 +16,12 @@ services:
           - "9000"
       env_file:
           - .env
+      # this is a little hack to ensure that service runs after dependencies
+      # more details: https://docs.docker.com/compose/startup-order/
+      entrypoint: >
+        sh -c 'sh /scripts/waitfor.sh postgres:5432 user-service:8080 && /bin/tomato-demo'
+      volumes:
+        - ../waitfor.sh:/scripts/waitfor.sh
       depends_on:
         - postgres
         - user-service
@@ -27,6 +33,8 @@ services:
       environment:
           POSTGRES_USER: tomato
           POSTGRES_PASSWORD: potato
+      volumes:
+        - ../migrations:/docker-entrypoint-initdb.d/
 
   user-service:
       image: rodolpheche/wiremock:2.31.0-alpine
