@@ -25,6 +25,7 @@ services:
       depends_on:
         - postgres
         - user-service
+      restart: always
           
   postgres:
       image: postgres:9.6
