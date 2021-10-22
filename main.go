@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -54,6 +55,12 @@ func main() {
 		}
 		defer resp.Body.Close()
 
+		if resp.StatusCode != http.StatusOK {
+			b, _ := ioutil.ReadAll(resp.Body)
+			http.Error(w, "Failed to send request to user service:"+string(b), http.StatusInternalServerError)
+			return
+		}
+
 		var respBody struct {
 			UserID string `json:"user_id"`
 		}
@@ -67,6 +74,8 @@ func main() {
 			http.Error(w, "Internal server error:"+err.Error(), http.StatusInternalServerError)
 			return
 		}
+
+		// for example publish a message to queue here
 
 		json.NewEncoder(w).Encode(map[string]interface{}{
 			"status": "success",
